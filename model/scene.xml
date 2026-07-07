@@ -1,0 +1,64 @@
+<mujoco model="jrf_planar_arm_board">
+    <compiler angle="radian" autolimits="true"/>
+
+    <option timestep="0.002" gravity="0 0 0" integrator="RK4">
+        <flag contact="enable"/>
+    </option>
+
+    <visual>
+        <global azimuth="135" elevation="-25"/>
+    </visual>
+
+    <default>
+        <!-- Joint damping is physical dissipation; position actuators add closed-loop servoing. -->
+        <joint damping="5.0" armature="0.05"/>
+        <geom density="700" condim="3" friction="1.2 0.02 0.02" solref="0.045 1" solimp="0.65 0.96 0.01"/>
+        <position kp="90" kv="22" ctrlrange="-3.14159 3.14159" forcerange="-120 120"/>
+    </default>
+
+    <worldbody>
+        <geom name="floor" type="plane" size="2.0 1.2 0.05" rgba="0.92 0.92 0.90 1" contype="0" conaffinity="0"/>
+        <light name="key_light" pos="0.1 -0.7 1.7" dir="0.2 0.5 -1" diffuse="0.8 0.8 0.8"/>
+        <camera name="overview" pos="0.65 -1.25 0.65" xyaxes="1 0.35 0 -0.18 0.52 0.84"/>
+
+        <!-- 3R arm lives in the x-z plane. Hinge axes are y; the Python FK uses the same sign convention. -->
+        <body name="base" pos="0 0 0.08">
+            <geom name="base_mount" type="cylinder" size="0.045 0.025" axisangle="1 0 0 1.5707963" rgba="0.18 0.18 0.20 1" contype="0" conaffinity="0"/>
+
+            <body name="link1" pos="0 0 0">
+                <joint name="joint1" type="hinge" axis="0 -1 0" range="-2.85 2.85"/>
+                <geom name="link1_geom" type="capsule" fromto="0 0 0 0.30 0 0" size="0.022" rgba="0.86 0.20 0.18 1" contype="0" conaffinity="0"/>
+
+                <body name="link2" pos="0.30 0 0">
+                    <joint name="joint2" type="hinge" axis="0 -1 0" range="-2.65 2.65"/>
+                    <geom name="link2_geom" type="capsule" fromto="0 0 0 0.28 0 0" size="0.020" rgba="0.15 0.58 0.35 1" contype="0" conaffinity="0"/>
+
+                    <body name="link3" pos="0.28 0 0">
+                        <joint name="joint3" type="hinge" axis="0 -1 0" range="-2.65 2.65"/>
+                        <geom name="link3_geom" type="capsule" fromto="0 0 0 0.18 0 0" size="0.018" rgba="0.16 0.30 0.78 1" contype="0" conaffinity="0"/>
+
+                        <!-- The pen is a geom, not just a site, so MuJoCo generates real contact forces. -->
+                        <geom name="pen_geom" type="sphere" pos="0.18 0 0" size="0.010" density="1200" rgba="0.03 0.03 0.03 1" contype="1" conaffinity="1"/>
+                        <site name="pen_tip" pos="0.18 0 0" size="0.006" rgba="1 0.85 0.05 1"/>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <!-- Passive board: its hinge is unactuated; spring/damper terms live on the joint. -->
+        <body name="board_base" pos="0.30 0 0.08">
+            <joint name="board_hinge" type="hinge" axis="0 -1 0" range="-0.65 0.65" stiffness="4.0" damping="0.35"/>
+            <geom name="board_geom" type="box" pos="0.30 0 0" size="0.30 0.085 0.015" density="250"
+                  rgba="0.58 0.43 0.24 1" contype="1" conaffinity="1"/>
+            <site name="board_hinge_site" pos="0 0 0.015" size="0.008" rgba="0.95 0.05 0.05 1"/>
+            <site name="board_mid_surface" pos="0.30 0 0.015" size="0.008" rgba="0.05 0.05 0.95 1"/>
+            <site name="board_end_surface" pos="0.60 0 0.015" size="0.008" rgba="0.05 0.80 0.05 1"/>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <position name="act_joint1" joint="joint1"/>
+        <position name="act_joint2" joint="joint2"/>
+        <position name="act_joint3" joint="joint3"/>
+    </actuator>
+</mujoco>
