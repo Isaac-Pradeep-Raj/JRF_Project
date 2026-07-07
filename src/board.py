@@ -68,7 +68,19 @@ def pen_position_xz(data: mujoco.MjData, pen_site_id: int) -> np.ndarray:
     return np.array([site_pos[0], site_pos[2]], dtype=float)
 
 
-def board_frame_from_model() -> BoardFrame:
-    # Mirrors model/scene.xml.  Keeping this explicit avoids reading geometry
-    # dimensions from MuJoCo in multiple places and makes assumptions visible.
-    return BoardFrame.default()
+def board_frame_from_model(model: mujoco.MjModel | None = None) -> BoardFrame:
+    """Build the analytical board frame from the MuJoCo geometry.
+
+    The controller uses this light-weight frame for IK, while MuJoCo remains
+    the source of truth for the simulated body.  Reading the hinge position and
+    surface height here avoids a silent mismatch if the XML board dimensions
+    are tuned.
+    """
+    if model is None:
+        return BoardFrame.default()
+
+    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "board_base")
+    geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "board_geom")
+    hinge_xz = np.array([model.body_pos[body_id, 0], model.body_pos[body_id, 2]], dtype=float)
+    surface_offset = float(model.geom_pos[geom_id, 2] + model.geom_size[geom_id, 2])
+    return BoardFrame(hinge_xz=hinge_xz, surface_offset=surface_offset)

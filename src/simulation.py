@@ -46,8 +46,9 @@ def run_experiment(
     ids = resolve_contact_ids(model)
 
     arm = Arm3R.from_lengths()
-    board = board_frame_from_model()
-    controller = MovingFrameIKController(arm=arm, board=board, force_band=ForceBand(lower=1.2, upper=3.0))
+    board = board_frame_from_model(model)
+    force_band = ForceBand(lower=1.2, upper=3.0)
+    controller = MovingFrameIKController(arm=arm, board=board, force_band=force_band)
     trajectory = BoardTrajectory()
     max_cmd_step = 0.030
 
@@ -70,6 +71,7 @@ def run_experiment(
         "normal_force": np.zeros(steps),
         "board_angle": np.zeros(steps),
         "normal_offset_cmd": np.zeros(steps),
+        "force_band": np.repeat([[force_band.lower, force_band.upper]], steps, axis=0),
         "ik_cost": np.zeros(steps),
         "ik_success": np.zeros(steps, dtype=bool),
     }

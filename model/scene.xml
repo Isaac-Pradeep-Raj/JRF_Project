@@ -1,7 +1,7 @@
 <mujoco model="jrf_planar_arm_board">
     <compiler angle="radian" autolimits="true"/>
 
-    <option timestep="0.002" gravity="0 0 0" integrator="RK4">
+    <option timestep="0.002" gravity="0 0 -9.81" integrator="RK4">
         <flag contact="enable"/>
     </option>
 
@@ -13,7 +13,7 @@
         <!-- Joint damping is physical dissipation; position actuators add closed-loop servoing. -->
         <joint damping="5.0" armature="0.05"/>
         <geom density="700" condim="3" friction="1.2 0.02 0.02" solref="0.045 1" solimp="0.65 0.96 0.01"/>
-        <position kp="90" kv="22" ctrlrange="-3.14159 3.14159" forcerange="-120 120"/>
+        <position kp="450" kv="45" ctrlrange="-3.14159 3.14159" forcerange="-350 350"/>
     </default>
 
     <worldbody>
@@ -47,7 +47,7 @@
 
         <!-- Passive board: its hinge is unactuated; spring/damper terms live on the joint. -->
         <body name="board_base" pos="0.30 0 0.08">
-            <joint name="board_hinge" type="hinge" axis="0 -1 0" range="-0.65 0.65" stiffness="4.0" damping="0.35"/>
+            <joint name="board_hinge" type="hinge" axis="0 -1 0" range="-0.65 0.65" stiffness="20.0" damping="1.2"/>
             <geom name="board_geom" type="box" pos="0.30 0 0" size="0.30 0.085 0.015" density="250"
                   rgba="0.58 0.43 0.24 1" contype="1" conaffinity="1"/>
             <site name="board_hinge_site" pos="0 0 0.015" size="0.008" rgba="0.95 0.05 0.05 1"/>

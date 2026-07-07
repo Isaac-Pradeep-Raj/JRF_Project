@@ -48,8 +48,8 @@ class MovingFrameIKController:
         theta_ref: np.ndarray | None = None,
         joint_limits: tuple[tuple[float, float], ...] = ((-2.85, 2.85), (-2.65, 2.65), (-2.65, 2.65)),
         pen_radius: float = 0.010,
-        normal_rate_m_per_n_step: float = 1.0e-4,
-        normal_offset_limits: tuple[float, float] = (0.004, 0.018),
+        normal_rate_m_per_n_step: float = 1.5e-4,
+        normal_offset_limits: tuple[float, float] = (-0.004, 0.018),
         w_position: float = 25.0,
         w_posture: float = 0.002,
         w_step: float = 0.0005,
@@ -69,7 +69,14 @@ class MovingFrameIKController:
         self.normal_offset = self.pen_radius
 
     def normal_offset_from_force(self, measured_force_n: float) -> float:
-        """Rate-limit the force loop to avoid impact impulses at first contact."""
+        """Rate-limit the force loop to avoid impact impulses at first contact.
+
+        The lower offset is allowed slightly below zero because this is a
+        commanded sphere-center target, not a hard geometric constraint.  A
+        small virtual penetration is the impedance-control mechanism that lets
+        the MuJoCo contact model develop the requested normal force despite
+        actuator compliance.
+        """
         if measured_force_n < self.force_band.lower:
             self.normal_offset -= self.normal_rate * (self.force_band.center - measured_force_n)
         elif measured_force_n > self.force_band.upper:

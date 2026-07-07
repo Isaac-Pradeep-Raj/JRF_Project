@@ -4,7 +4,7 @@
     <default>
         <joint damping="5.0" armature="0.05"/>
         <geom density="700" condim="3" friction="1.2 0.02 0.02" solref="0.045 1" solimp="0.65 0.96 0.01"/>
-        <position kp="90" kv="22" ctrlrange="-3.14159 3.14159" forcerange="-120 120"/>
+        <position kp="450" kv="45" ctrlrange="-3.14159 3.14159" forcerange="-350 350"/>
     </default>
 
     <worldbody>
