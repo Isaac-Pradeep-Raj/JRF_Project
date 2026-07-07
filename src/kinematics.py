@@ -24,7 +24,7 @@ class Arm3R:
         cls,
         l1: float = 0.30,
         l2: float = 0.28,
-        l3: float = 0.18,
+        l3: float = 0.27,
         base_xz: tuple[float, float] = (0.0, 0.08),
     ) -> "Arm3R":
         return cls(np.array([l1, l2, l3], dtype=float), np.array(base_xz, dtype=float))

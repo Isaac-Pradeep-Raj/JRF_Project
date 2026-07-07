@@ -14,13 +14,22 @@ from kinematics import BoardFrame
 class BoardTrajectory:
     """A smooth path specified in board coordinates, not world coordinates."""
 
+    profile: str = "sine"
     u_center: float = 0.30
-    u_amplitude: float = 0.16
-    frequency_hz: float = 0.18
+    u_amplitude: float = 0.06
+    u_start: float = 0.24
+    u_end: float = 0.36
 
-    def u(self, time_s: float) -> float:
-        # Sinusoidal board-frame motion repeatedly tests moving-frame tracking.
-        return self.u_center + self.u_amplitude * np.sin(2.0 * np.pi * self.frequency_hz * time_s)
+    def u(self, time_s: float, duration_s: float = 1.0) -> float:
+        # The assignment specifies profiles as u(s), s in [0, 1].
+        s = float(np.clip(time_s / max(duration_s, 1.0e-9), 0.0, 1.0))
+        if self.profile == "static":
+            return self.u_center
+        if self.profile == "sweep":
+            return self.u_start + (self.u_end - self.u_start) * s
+        if self.profile == "sine":
+            return self.u_center + self.u_amplitude * np.sin(2.0 * np.pi * s)
+        raise ValueError(f"Unknown board trajectory profile: {self.profile}")
 
 
 @dataclass(frozen=True)

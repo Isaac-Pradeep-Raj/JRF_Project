@@ -3,7 +3,7 @@
 
     <default>
         <joint damping="5.0" armature="0.05"/>
-        <geom density="700" condim="3" friction="1.2 0.02 0.02" solref="0.045 1" solimp="0.65 0.96 0.01"/>
+        <geom density="700" condim="3" friction="1.0 0.015 0.015" solref="0.012 1" solimp="0.86 0.995 0.001"/>
         <position kp="450" kv="45" ctrlrange="-3.14159 3.14159" forcerange="-350 350"/>
     </default>
 
@@ -20,8 +20,11 @@
                     <body name="link3" pos="0.28 0 0">
                         <joint name="joint3" type="hinge" axis="0 -1 0" range="-2.65 2.65"/>
                         <geom name="link3_geom" type="capsule" fromto="0 0 0 0.18 0 0" size="0.018" rgba="0.16 0.30 0.78 1" contype="0" conaffinity="0"/>
-                        <geom name="pen_geom" type="sphere" pos="0.18 0 0" size="0.010" density="1200" rgba="0.03 0.03 0.03 1" contype="1" conaffinity="1"/>
-                        <site name="pen_tip" pos="0.18 0 0" size="0.006" rgba="1 0.85 0.05 1"/>
+                        <geom name="pen_shaft_geom" type="capsule" fromto="0.18 0 0 0.27 0 0" size="0.004"
+                              density="1200" rgba="0.03 0.03 0.03 1" contype="0" conaffinity="0"/>
+                        <geom name="pen_geom" type="sphere" pos="0.27 0 0" size="0.002" density="1200"
+                              rgba="0.01 0.01 0.01 1" contype="1" conaffinity="1" margin="0.0005"/>
+                        <site name="pen_tip" pos="0.27 0 0" size="0.004" rgba="1 0.85 0.05 1"/>
                     </body>
                 </body>
             </body>

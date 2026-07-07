@@ -13,7 +13,7 @@ def save_summary_plots(log: dict[str, np.ndarray], output_dir: Path) -> list[Pat
     paths: list[Path] = []
     time = log["time"]
 
-    fig, axes = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(9, 9), sharex=True)
     axes[0].plot(time, log["u_cmd"], label="target u")
     axes[0].plot(time, log["u_actual"], label="actual u", linewidth=1.2)
     axes[0].set_ylabel("board u [m]")
@@ -35,6 +35,12 @@ def save_summary_plots(log: dict[str, np.ndarray], output_dir: Path) -> list[Pat
     axes[2].set_xlabel("time [s]")
     axes[2].legend(loc="best")
     axes[2].grid(True, alpha=0.3)
+
+    axes[3].plot(time, 1000.0 * log["surface_gap"])
+    axes[3].axhline(0.0, color="black", linewidth=0.8, alpha=0.6)
+    axes[3].set_ylabel("contact gap [mm]")
+    axes[3].set_xlabel("time [s]")
+    axes[3].grid(True, alpha=0.3)
     fig.tight_layout()
     path = output_dir / "tracking_force.png"
     fig.savefig(path, dpi=160)
@@ -62,6 +68,8 @@ def save_summary_plots(log: dict[str, np.ndarray], output_dir: Path) -> list[Pat
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.plot(log["target_xz"][:, 0], log["target_xz"][:, 1], label="world target")
     ax.plot(log["pen_xz"][:, 0], log["pen_xz"][:, 1], label="pen tip", linewidth=1.1)
+    if "contact_xz" in log:
+        ax.plot(log["contact_xz"][:, 0], log["contact_xz"][:, 1], label="contact point", linewidth=1.1)
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("x [m]")
     ax.set_ylabel("z [m]")

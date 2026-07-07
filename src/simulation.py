@@ -35,21 +35,30 @@ def set_joint_positions(model: mujoco.MjModel, data: mujoco.MjData, joint_names:
     mujoco.mj_forward(model, data)
 
 
+def mocap_id(model: mujoco.MjModel, body_name: str) -> int:
+    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+    return int(model.body_mocapid[body_id])
+
+
 def run_experiment(
     duration: float = 8.0,
     realtime: bool = False,
     viewer: bool = False,
     output: Path | None = None,
+    profile: str = "sine",
 ) -> dict[str, np.ndarray]:
     model = mujoco.MjModel.from_xml_path(str(MODEL_PATH))
     data = mujoco.MjData(model)
     ids = resolve_contact_ids(model)
+    desired_mocap = mocap_id(model, "desired_marker")
+    actual_mocap = mocap_id(model, "actual_marker")
+    contact_mocap = mocap_id(model, "contact_marker")
 
     arm = Arm3R.from_lengths()
     board = board_frame_from_model(model)
     force_band = ForceBand(lower=1.2, upper=3.0)
     controller = MovingFrameIKController(arm=arm, board=board, force_band=force_band)
-    trajectory = BoardTrajectory()
+    trajectory = BoardTrajectory(profile=profile)
     max_cmd_step = 0.030
 
     joint_names = ["joint1", "joint2", "joint3"]
@@ -65,6 +74,7 @@ def run_experiment(
         "q_cmd": np.zeros((steps, 3)),
         "target_xz": np.zeros((steps, 2)),
         "pen_xz": np.zeros((steps, 2)),
+        "contact_xz": np.zeros((steps, 2)),
         "u_cmd": np.zeros(steps),
         "u_actual": np.zeros(steps),
         "surface_gap": np.zeros(steps),
@@ -80,7 +90,7 @@ def run_experiment(
         controller.theta = data.qpos[:3].copy()
         measured_force = normal_contact_force(model, data, ids)
         angle = board_hinge_angle(model, data, ids.board_joint)
-        u_cmd = trajectory.u(data.time)
+        u_cmd = trajectory.u(data.time, duration)
         ik = controller.solve(u_cmd, angle, measured_force)
         q_cmd = data.ctrl.copy()
         q_cmd += np.clip(ik.theta - q_cmd, -max_cmd_step, max_cmd_step)
@@ -89,17 +99,25 @@ def run_experiment(
 
         pen_xz = pen_position_xz(data, ids.pen_site)
         next_angle = board_hinge_angle(model, data, ids.board_joint)
-        u_actual, gap = board.world_to_board(pen_xz, next_angle)
+        u_actual, center_gap = board.world_to_board(pen_xz, next_angle)
+        _, board_normal = board.axes(next_angle)
+        contact_xz = pen_xz - controller.pen_radius * board_normal
+        contact_point_gap = center_gap - controller.pen_radius
         next_force = normal_contact_force(model, data, ids)
+
+        data.mocap_pos[desired_mocap] = [ik.target_xz[0], -0.11, ik.target_xz[1]]
+        data.mocap_pos[actual_mocap] = [pen_xz[0], -0.14, pen_xz[1]]
+        data.mocap_pos[contact_mocap] = [contact_xz[0], -0.17, contact_xz[1]]
 
         log["time"][k] = data.time
         log["q"][k] = data.qpos[:3]
         log["q_cmd"][k] = q_cmd
         log["target_xz"][k] = ik.target_xz
         log["pen_xz"][k] = pen_xz
+        log["contact_xz"][k] = contact_xz
         log["u_cmd"][k] = u_cmd
         log["u_actual"][k] = u_actual
-        log["surface_gap"][k] = gap
+        log["surface_gap"][k] = contact_point_gap
         log["normal_force"][k] = next_force
         log["board_angle"][k] = next_angle
         log["normal_offset_cmd"][k] = ik.normal_offset
@@ -154,11 +172,12 @@ def main() -> None:
     parser.add_argument("--duration", type=float, default=8.0)
     parser.add_argument("--viewer", action="store_true", help="show the MuJoCo viewer")
     parser.add_argument("--realtime", action="store_true", help="sleep to match model timestep when using viewer")
+    parser.add_argument("--profile", choices=["static", "sweep", "sine"], default="sine")
     parser.add_argument("--no-plots", action="store_true")
     parser.add_argument("--out", type=Path, default=FIGURES_DIR / "simulation_log.npz")
     args = parser.parse_args()
 
-    log = run_experiment(duration=args.duration, realtime=args.realtime, viewer=args.viewer, output=args.out)
+    log = run_experiment(duration=args.duration, realtime=args.realtime, viewer=args.viewer, output=args.out, profile=args.profile)
     print(summarize(log))
     print(f"Saved log: {args.out}")
     if not args.no_plots:

@@ -12,7 +12,7 @@
     <default>
         <!-- Joint damping is physical dissipation; position actuators add closed-loop servoing. -->
         <joint damping="5.0" armature="0.05"/>
-        <geom density="700" condim="3" friction="1.2 0.02 0.02" solref="0.045 1" solimp="0.65 0.96 0.01"/>
+        <geom density="700" condim="3" friction="1.0 0.015 0.015" solref="0.012 1" solimp="0.86 0.995 0.001"/>
         <position kp="450" kv="45" ctrlrange="-3.14159 3.14159" forcerange="-350 350"/>
     </default>
 
@@ -20,6 +20,15 @@
         <geom name="floor" type="plane" size="2.0 1.2 0.05" rgba="0.92 0.92 0.90 1" contype="0" conaffinity="0"/>
         <light name="key_light" pos="0.1 -0.7 1.7" dir="0.2 0.5 -1" diffuse="0.8 0.8 0.8"/>
         <camera name="overview" pos="0.65 -1.25 0.65" xyaxes="1 0.35 0 -0.18 0.52 0.84"/>
+        <body name="desired_marker" mocap="true" pos="0.30 -0.11 0.12">
+            <site name="desired_marker_site" type="sphere" size="0.009" rgba="1.0 0.75 0.05 1"/>
+        </body>
+        <body name="actual_marker" mocap="true" pos="0.30 -0.14 0.12">
+            <site name="actual_marker_site" type="sphere" size="0.007" rgba="0.0 0.45 1.0 1"/>
+        </body>
+        <body name="contact_marker" mocap="true" pos="0.30 -0.17 0.12">
+            <site name="contact_marker_site" type="sphere" size="0.006" rgba="0.05 0.9 0.2 1"/>
+        </body>
 
         <!-- 3R arm lives in the x-z plane. Hinge axes are y; the Python FK uses the same sign convention. -->
         <body name="base" pos="0 0 0.08">
@@ -37,20 +46,43 @@
                         <joint name="joint3" type="hinge" axis="0 -1 0" range="-2.65 2.65"/>
                         <geom name="link3_geom" type="capsule" fromto="0 0 0 0.18 0 0" size="0.018" rgba="0.16 0.30 0.78 1" contype="0" conaffinity="0"/>
 
-                        <!-- The pen is a geom, not just a site, so MuJoCo generates real contact forces. -->
-                        <geom name="pen_geom" type="sphere" pos="0.18 0 0" size="0.010" density="1200" rgba="0.03 0.03 0.03 1" contype="1" conaffinity="1"/>
-                        <site name="pen_tip" pos="0.18 0 0" size="0.006" rgba="1 0.85 0.05 1"/>
+                        <!-- Rigid pen tool attached to link 3: shaft is visual only; only the small tip collides. -->
+                        <geom name="pen_shaft_geom" type="capsule" fromto="0.18 0 0 0.27 0 0" size="0.004"
+                              density="1200" rgba="0.03 0.03 0.03 1" contype="0" conaffinity="0"/>
+                        <geom name="pen_geom" type="sphere" pos="0.27 0 0" size="0.002" density="1200"
+                              rgba="0.01 0.01 0.01 1" contype="1" conaffinity="1" margin="0.0005"/>
+                        <site name="pen_tip" pos="0.27 0 0" size="0.004" rgba="1 0.85 0.05 1"/>
                     </body>
                 </body>
             </body>
         </body>
 
         <!-- Passive board: its hinge is unactuated; spring/damper terms live on the joint. -->
+        <body name="board_support" pos="0.30 0 0.08">
+            <geom name="hinge_stand_left" type="box" pos="0 -0.11 -0.045" size="0.012 0.010 0.045" rgba="0.24 0.24 0.26 1" contype="0" conaffinity="0"/>
+            <geom name="hinge_stand_right" type="box" pos="0 0.11 -0.045" size="0.012 0.010 0.045" rgba="0.24 0.24 0.26 1" contype="0" conaffinity="0"/>
+            <geom name="hinge_axle_visual" type="cylinder" pos="0 0 0" size="0.012 0.13" axisangle="1 0 0 1.5707963" rgba="0.08 0.08 0.09 1" contype="0" conaffinity="0"/>
+            <geom name="spring_anchor" type="sphere" pos="0.18 0 -0.07" size="0.012" rgba="0.90 0.18 0.12 1" contype="0" conaffinity="0"/>
+            <geom name="spring_visual_1" type="capsule" fromto="0.14 0 -0.060 0.155 0 -0.085" size="0.003" rgba="0.90 0.18 0.12 1" contype="0" conaffinity="0"/>
+            <geom name="spring_visual_2" type="capsule" fromto="0.155 0 -0.085 0.170 0 -0.055" size="0.003" rgba="0.90 0.18 0.12 1" contype="0" conaffinity="0"/>
+            <geom name="spring_visual_3" type="capsule" fromto="0.170 0 -0.055 0.185 0 -0.085" size="0.003" rgba="0.90 0.18 0.12 1" contype="0" conaffinity="0"/>
+            <geom name="spring_visual_4" type="capsule" fromto="0.185 0 -0.085 0.200 0 -0.060" size="0.003" rgba="0.90 0.18 0.12 1" contype="0" conaffinity="0"/>
+            <geom name="damper_visual" type="capsule" fromto="0.22 0 -0.065 0.25 0 -0.035" size="0.005" rgba="0.12 0.12 0.14 1" contype="0" conaffinity="0"/>
+        </body>
         <body name="board_base" pos="0.30 0 0.08">
             <joint name="board_hinge" type="hinge" axis="0 -1 0" range="-0.65 0.65" stiffness="20.0" damping="1.2"/>
             <geom name="board_geom" type="box" pos="0.30 0 0" size="0.30 0.085 0.015" density="250"
                   rgba="0.58 0.43 0.24 1" contype="1" conaffinity="1"/>
             <site name="board_hinge_site" pos="0 0 0.015" size="0.008" rgba="0.95 0.05 0.05 1"/>
+            <site name="trajectory_dot_0" pos="0.14 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_1" pos="0.18 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_2" pos="0.22 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_3" pos="0.26 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_4" pos="0.30 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_5" pos="0.34 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_6" pos="0.38 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_7" pos="0.42 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
+            <site name="trajectory_dot_8" pos="0.46 -0.095 0.018" size="0.004" rgba="1.0 0.75 0.05 1"/>
             <site name="board_mid_surface" pos="0.30 0 0.015" size="0.008" rgba="0.05 0.05 0.95 1"/>
             <site name="board_end_surface" pos="0.60 0 0.015" size="0.008" rgba="0.05 0.80 0.05 1"/>
         </body>
