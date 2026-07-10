@@ -16,9 +16,23 @@ pip install mujoco numpy scipy matplotlib pypdf
 
 From the project root:
 
-```powershell
-venv\Scripts\python.exe src\simulation.py --duration 8
-```
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (Linux/macOS)
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the simulation with visualization
+python src/simulation.py --viewer --realtime
+
+# Or run headless and generate plots
+python src/simulation.py
 
 This saves:
 
